@@ -1,0 +1,51 @@
+peoples = [
+    ("people1", "222111"),
+    ("people2", "222222"),
+    ("people3", "222333"),
+    ("people4", "222444"),
+    ("people5", "222555"),
+    ("people6", "222666"),
+    ("people7", "222777"),
+    ("people8", "222888"),
+    ("people9", "222999"),
+    ("people10", "333111"),
+    ("people11", "333222"),
+    ("people12", "333333"),
+    ("people13", "333444"),
+    ("people14", "333666"),
+    ("people15", "333777"),
+    ("people16", "333888"),
+    ("people17", "333999"),
+    ("people18", "444111"),
+    ("people19", "444222"),
+    ("people20", "444333"),
+    ("people21", "345564"),
+    ("people22", "333555"),
+    ("people23", "333555"),
+    ("people24", "333555"),
+    ("people25", "333555"),
+    ("people26", "333555"),
+    ("people27", "333555"),
+    ("people28", "333555"),
+    ("people29", "333555"),
+    ("people30", "333555"),
+    ("people31", "333555"),
+    ("people32", "333555"),
+    ("people33", "333555"),
+    ("people34", "333555"),
+    ("people35", "333555"),
+    ("people36", "333555"),
+]
+
+main_peoples = [
+    ("main_people1", "666111"),
+    ("main_people2", "666222"),
+    ("main_people3", "666333"),
+    ("main_people4", "666444"),
+    ("main_people5", "666555"),
+    ("main_people6", "666777"),
+]
+
+today_people = []
+today_main_people = []
+today_patrol = []
