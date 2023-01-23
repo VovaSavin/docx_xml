@@ -2,7 +2,7 @@ import random
 import datetime
 import os
 
-import xml.etree.ElementTree as et
+import xml.etree.ElementTree as Et
 import zipfile
 
 from docx import Document
@@ -11,9 +11,6 @@ from docx.enum.text import WD_PARAGRAPH_ALIGNMENT
 from datas import (
     main_peoples,
     peoples,
-    today_people,
-    today_main_people,
-    today_patrol,
 )
 
 
@@ -33,6 +30,16 @@ def iters_to_docx_tb(cnt: int, rec: list, peps: list, rng: int, to_stop: int, jo
             break
 
 
+def extract_xml(zp_docx: zipfile.ZipFile, date_day):
+    os.mkdir(f"./word_{date_day}")
+    zp_docx.namelist()
+    zp_docx.extractall(f"./word_{date_day}")
+    cur_xml = Et.parse(f"./word_{date_day}/word/document.xml")
+    cur_xml_read = cur_xml.getroot()
+    not_patrol = parse_xml(cur_xml_read)
+    docs(not_patrol)
+
+
 def parse_xml(root_of_xml) -> list:
     temp = []
     for x in range(13):
@@ -46,25 +53,23 @@ def parse_xml(root_of_xml) -> list:
     return temp
 
 
-def get_data_from_docx(days_ago: int):
-    yesterday = datetime.date.today() - datetime.timedelta(days=days_ago)
+def get_data_from_docx():
+    yesterday = datetime.date.today() - datetime.timedelta(days=1)
+    day_before_yesterday = datetime.date.today() - datetime.timedelta(days=2)
     # today = datetime.date.today()
-    if os.path.exists(f"C:/Users/Vovick/randomPatrol/Patrol{yesterday}.docx"):
-        with zipfile.ZipFile(f"Patrol{yesterday}.docx") as zp_docx:
-            os.mkdir(f"./word{yesterday}")
-            zp_docx.namelist()
-            zp_docx.extractall(f"C:/Users/Vovick/randomPatrol/word{yesterday}")
 
-    cur_xml = et.parse(f"./word{yesterday}/word/document.xml")
-    cur_xml_read = cur_xml.getroot()
-    not_patrol = parse_xml(cur_xml_read)
-    docs(not_patrol)
+    if os.path.exists(f"./Patrol_{day_before_yesterday}.docx"):
+        with zipfile.ZipFile(f"Patrol_{day_before_yesterday}.docx") as zp_docx:
+            extract_xml(zp_docx, day_before_yesterday)
+    elif os.path.exists(f"./Patrol_{yesterday}.docx"):
+        with zipfile.ZipFile(f"Patrol_{yesterday}.docx") as zp_docx:
+            extract_xml(zp_docx, yesterday)
 
 
 def docs(xml_file: list):
     document = Document()
 
-    d = document.add_heading(f'Patrol tomorrow{datetime.date.today()}', 0)
+    d = document.add_heading(f'Patrol tomorrow {datetime.date.today()}', 0)
     d.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
 
     records = []
@@ -87,9 +92,7 @@ def docs(xml_file: list):
 
     document.add_page_break()
 
-    document.save(f'Patrol{datetime.datetime.today().date()}.docx')
+    document.save(f'Patrol_{datetime.datetime.today().date()}.docx')
 
 
-#
-
-get_data_from_docx(1)
+get_data_from_docx()
