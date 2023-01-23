@@ -1,5 +1,6 @@
 import random
 import datetime
+import os
 
 import xml.etree.ElementTree as et
 import zipfile
@@ -16,49 +17,60 @@ from datas import (
 )
 
 
-def iters_to_docx_tb(rec: list, peps: list, rng: int, to_stop: int, job: str):
+def iters_to_docx_tb(cnt: int, rec: list, peps: list, rng: int, to_stop: int, job: str, xml_file: list):
     for x in range(rng):
         main_p = random.choice(peps)
-        rec.append(
-            (
-                x + 1,
-                job,
-                main_p[0],
-                main_p[1]
+        if main_p not in xml_file:
+            rec.append(
+                (
+                    x + cnt,
+                    job,
+                    main_p[0],
+                    main_p[1]
+                )
             )
-        )
         if len(rec) == to_stop:
             break
 
 
-def get_data_from_docx():
-    with zipfile.ZipFile("Patrol2023-01-22.docx") as z:
-        z.namelist()
-        z.extractall()
-    tr = et.parse("[Content_Types].xml")
-    rr = tr.getroot()
-    finder_xml = None
-    for r in rr:
-        if list(r.attrib.values())[0] == "/word/document.xml":
-            finder_xml = "/word/document.xml"
+def parse_xml(root_of_xml) -> list:
+    temp = []
+    for x in range(13):
+        temp_inner = []
+        for y in range(3):
+            temp_inner.append(root_of_xml[0][1][x + 3][y + 1][1][0][0].text.strip())
+            print(root_of_xml[0][1][x + 3][y + 1][1][0][0].text)
+        print("##" * 8)
+        temp_inner = tuple(temp_inner)
+        temp.append(temp_inner)
+    return temp
 
-    cur_xml = et.parse("word/document.xml")
+
+def get_data_from_docx(days_ago: int):
+    yesterday = datetime.date.today() - datetime.timedelta(days=days_ago)
+    # today = datetime.date.today()
+    if os.path.exists(f"C:/Users/Vovick/randomPatrol/Patrol{yesterday}.docx"):
+        with zipfile.ZipFile(f"Patrol{yesterday}.docx") as zp_docx:
+            os.mkdir(f"./word{yesterday}")
+            zp_docx.namelist()
+            zp_docx.extractall(f"C:/Users/Vovick/randomPatrol/word{yesterday}")
+
+    cur_xml = et.parse(f"./word{yesterday}/word/document.xml")
     cur_xml_read = cur_xml.getroot()
-    print(cur_xml_read[0][1][3][1][1][0][0].text)
-    print(cur_xml_read[0][1][3][2][1][0][0].text)
-    print(cur_xml_read[0][1][3][3][1][0][0].text)
+    not_patrol = parse_xml(cur_xml_read)
+    docs(not_patrol)
 
 
-def docs():
+def docs(xml_file: list):
     document = Document()
 
-    d = document.add_heading('Patrol tomorrow', 0)
+    d = document.add_heading(f'Patrol tomorrow{datetime.date.today()}', 0)
     d.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
 
     records = []
-    iters_to_docx_tb(records, main_peoples, 2, 2, "Main")
+    iters_to_docx_tb(1, records, main_peoples, 2, 2, "Main", xml_file)
 
-    iters_to_docx_tb(records, peoples, 12, 14, "Simple")
+    iters_to_docx_tb(3, records, peoples, 12, 14, "Simple", xml_file)
 
     table = document.add_table(rows=1, cols=4)
     hdr_cells = table.rows[0].cells
@@ -79,5 +91,5 @@ def docs():
 
 
 #
-# docs()
-get_data_from_docx()
+
+get_data_from_docx(1)
