@@ -30,14 +30,18 @@ def iters_to_docx_tb(cnt: int, rec: list, peps: list, rng: int, to_stop: int, jo
             break
 
 
-def extract_xml(zp_docx: zipfile.ZipFile, date_day):
-    os.mkdir(f"./word_{date_day}")
+def extract_xml(zp_docx: zipfile.ZipFile, date_day) -> list:
+    try:
+        os.mkdir(f"./word_{date_day}")
+    except FileExistsError:
+        print("File exists. I do not create the file!")
     zp_docx.namelist()
     zp_docx.extractall(f"./word_{date_day}")
     cur_xml = Et.parse(f"./word_{date_day}/word/document.xml")
     cur_xml_read = cur_xml.getroot()
     not_patrol = parse_xml(cur_xml_read)
-    docs(not_patrol)
+    # docs(not_patrol)
+    return not_patrol
 
 
 def parse_xml(root_of_xml) -> list:
@@ -58,12 +62,23 @@ def get_data_from_docx():
     day_before_yesterday = datetime.date.today() - datetime.timedelta(days=2)
     # today = datetime.date.today()
 
-    if os.path.exists(f"./Patrol_{day_before_yesterday}.docx"):
+    if os.path.exists(f"./Patrol_{day_before_yesterday}.docx") and os.path.exists(f"./Patrol_{yesterday}.docx"):
+        with zipfile.ZipFile(f"Patrol_{yesterday}.docx") as zp_docx:
+            yest_patr = extract_xml(zp_docx, yesterday)
+            before_patr = extract_xml(zp_docx, day_before_yesterday)
+            docs(before_patr + yest_patr)
+    elif os.path.exists(f"./Patrol_{day_before_yesterday}.docx"):
         with zipfile.ZipFile(f"Patrol_{day_before_yesterday}.docx") as zp_docx:
-            extract_xml(zp_docx, day_before_yesterday)
+            before_patr = extract_xml(zp_docx, day_before_yesterday)
+            docs(before_patr)
     elif os.path.exists(f"./Patrol_{yesterday}.docx"):
         with zipfile.ZipFile(f"Patrol_{yesterday}.docx") as zp_docx:
-            extract_xml(zp_docx, yesterday)
+            yest_patr = extract_xml(zp_docx, yesterday)
+            docs(yest_patr)
+    else:
+        random.shuffle(main_peoples)
+        random.shuffle(peoples)
+        docs(main_peoples[:2] + peoples[:12])
 
 
 def docs(xml_file: list):
@@ -74,7 +89,6 @@ def docs(xml_file: list):
 
     records = []
     iters_to_docx_tb(1, records, main_peoples, 2, 2, "Main", xml_file)
-
     iters_to_docx_tb(3, records, peoples, 12, 14, "Simple", xml_file)
 
     table = document.add_table(rows=1, cols=4)
