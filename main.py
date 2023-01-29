@@ -14,23 +14,44 @@ from datas import (
 )
 
 
-def iters_to_docx_tb(cnt: int, rec: list, peps: list, rng: int, to_stop: int, job: str, xml_file: list):
-    for x in range(rng):
-        main_p = random.choice(peps)
-        if main_p not in xml_file:
+def sorted_patrol_list_past(list_1: list, list_2: list) -> list:
+    temp_list_1 = []
+    temp_list_2 = []
+
+    for x in list_1:
+        if list_1.index(x) < 2:
+            temp_list_1.append(x)
+        else:
+            temp_list_2.append(x)
+
+    for x in list_2:
+        if list_2.index(x) < 2:
+            temp_list_1.append(x)
+        else:
+            temp_list_2.append(x)
+    return temp_list_1 + temp_list_2
+
+
+def iters_to_docx_tb(cnt: int, rec: list, peps: list, to_stop: int, xml_file: list):
+    print("Primary list")
+    print(peps)
+    random.shuffle(peps)
+    for x in peps:
+        if x not in xml_file:
             rec.append(
                 (
-                    x + cnt,
-                    job,
-                    main_p[0],
-                    main_p[1]
+                    peps.index(x) + cnt,
+                    x[0],
+                    x[1],
+                    x[2]
                 )
             )
+
         if len(rec) == to_stop:
             break
 
 
-def extract_xml(zp_docx: zipfile.ZipFile, date_day) -> list:
+def extract_xml(zp_docx: zipfile.ZipFile, date_day, zp_docx_2=None, date_before_yesterday=None):
     try:
         os.mkdir(f"./word_{date_day}")
     except FileExistsError:
@@ -40,8 +61,21 @@ def extract_xml(zp_docx: zipfile.ZipFile, date_day) -> list:
     cur_xml = Et.parse(f"./word_{date_day}/word/document.xml")
     cur_xml_read = cur_xml.getroot()
     not_patrol = parse_xml(cur_xml_read)
-    # docs(not_patrol)
-    return not_patrol
+    if date_before_yesterday is None and zp_docx_2 is None:
+        print("Not_patrol")
+        print(not_patrol)
+        docs(not_patrol)
+    else:
+        zp_docx_2.namelist()
+        zp_docx_2.extractall(f"./word_{date_before_yesterday}")
+        before_cur_xml = Et.parse(f"./word_{date_before_yesterday}/word/document.xml")
+        before_cur_xml_read = before_cur_xml.getroot()
+        before_not_patrol = parse_xml(before_cur_xml_read)
+        print("Sum_not_patrol")
+        print(sorted_patrol_list_past(not_patrol, before_not_patrol))
+        docs(
+            sorted_patrol_list_past(not_patrol, before_not_patrol)
+        )
 
 
 def parse_xml(root_of_xml) -> list:
@@ -50,35 +84,35 @@ def parse_xml(root_of_xml) -> list:
         temp_inner = []
         for y in range(3):
             temp_inner.append(root_of_xml[0][1][x + 3][y + 1][1][0][0].text.strip())
-            print(root_of_xml[0][1][x + 3][y + 1][1][0][0].text)
-        print("##" * 8)
         temp_inner = tuple(temp_inner)
         temp.append(temp_inner)
+
     return temp
 
 
 def get_data_from_docx():
     yesterday = datetime.date.today() - datetime.timedelta(days=1)
     day_before_yesterday = datetime.date.today() - datetime.timedelta(days=2)
-    # today = datetime.date.today()
 
     if os.path.exists(f"./Patrol_{day_before_yesterday}.docx") and os.path.exists(f"./Patrol_{yesterday}.docx"):
-        with zipfile.ZipFile(f"Patrol_{yesterday}.docx") as zp_docx:
-            yest_patr = extract_xml(zp_docx, yesterday)
-            before_patr = extract_xml(zp_docx, day_before_yesterday)
-            docs(before_patr + yest_patr)
+        with zipfile.ZipFile(
+                f"Patrol_{yesterday}.docx"
+        ) as zp_docx, zipfile.ZipFile(
+            f"Patrol_{day_before_yesterday}.docx"
+        ) as zp_docx_2:
+            extract_xml(zp_docx, yesterday, zp_docx_2, day_before_yesterday)
+        print("IF")
     elif os.path.exists(f"./Patrol_{day_before_yesterday}.docx"):
         with zipfile.ZipFile(f"Patrol_{day_before_yesterday}.docx") as zp_docx:
-            before_patr = extract_xml(zp_docx, day_before_yesterday)
-            docs(before_patr)
+            extract_xml(zp_docx, day_before_yesterday)
+        print("ELIF 1")
     elif os.path.exists(f"./Patrol_{yesterday}.docx"):
         with zipfile.ZipFile(f"Patrol_{yesterday}.docx") as zp_docx:
-            yest_patr = extract_xml(zp_docx, yesterday)
-            docs(yest_patr)
+            extract_xml(zp_docx, yesterday)
+        print("ELIF 2")
     else:
-        random.shuffle(main_peoples)
-        random.shuffle(peoples)
-        docs(main_peoples[:2] + peoples[:12])
+        print("ELSE")
+        docs([])
 
 
 def docs(xml_file: list):
@@ -88,8 +122,9 @@ def docs(xml_file: list):
     d.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
 
     records = []
-    iters_to_docx_tb(1, records, main_peoples, 2, 2, "Main", xml_file)
-    iters_to_docx_tb(3, records, peoples, 12, 14, "Simple", xml_file)
+    iters_to_docx_tb(1, records, main_peoples, 2, xml_file)
+    iters_to_docx_tb(3, records, peoples, 14, xml_file)
+    print(records)
 
     table = document.add_table(rows=1, cols=4)
     hdr_cells = table.rows[0].cells
